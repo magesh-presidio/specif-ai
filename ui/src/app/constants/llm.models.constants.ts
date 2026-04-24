@@ -28,7 +28,7 @@ export async function getProviderModels(provider: string): Promise<string[]> {
   }
 
   const modelMap: { [key: string]: string[] } = {
-    'openai-native': ['gpt-4o', 'gpt-4o-mini'],
+    'openai-native': ['gpt-4o', 'gpt-4o-mini', 'gpt-5.2'],
     'bedrock': [
       'anthropic.claude-opus-4-20250514-v1:0',
       'anthropic.claude-sonnet-4-20250514-v1:0',

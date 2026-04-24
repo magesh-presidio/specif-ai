@@ -7,6 +7,7 @@ import { guardrailsEngine } from '../../../guardrails';
 export enum OpenAiModelId {
   O3 = 'o3',
   O4_MINI = 'o4-mini',
+  GPT_5_2 = 'gpt-5.2',
   GPT_4_1 = 'gpt-4.1',
   GPT_4_1_MINI = 'gpt-4.1-mini',
   GPT_4_1_NANO = 'gpt-4.1-nano',
@@ -28,6 +29,10 @@ const OpenAiModels: Record<OpenAiModelId, ModelInfoV1> = {
   [OpenAiModelId.O4_MINI]: {
     maxTokens: 100_000,
     contextWindow: 200_000,
+  },
+  [OpenAiModelId.GPT_5_2]: {
+    maxTokens: 16_384,
+    contextWindow: 128_000,
   },
   [OpenAiModelId.GPT_4_1]: {
     maxTokens: 32_768,
@@ -75,6 +80,16 @@ const OpenAiModels: Record<OpenAiModelId, ModelInfoV1> = {
   },
 };
 
+function getOpenAiModelInfo(model: string): ModelInfoV1 {
+  const modelInfo = OpenAiModels[model as OpenAiModelId];
+
+  if (!modelInfo) {
+    throw new LLMError(`Unsupported OpenAI model: ${model}`, 'openai');
+  }
+
+  return modelInfo;
+}
+
 interface OpenAIConfig extends LLMConfig {
   baseUrl?: string;
   apiKey: string;
@@ -88,7 +103,7 @@ export class OpenAILangChainProvider implements LangChainModelProvider {
 
   constructor(config: Partial<OpenAIConfig>) {
     this.configData = this.getConfig(config);
-    const modelInfo = OpenAiModels[this.configData.model];
+    const modelInfo = getOpenAiModelInfo(this.configData.model);
 
     this.model = LangChainChatGuardrails(
       new ChatOpenAI({
@@ -112,10 +127,12 @@ export class OpenAILangChainProvider implements LangChainModelProvider {
       throw new LLMError('Model ID is required', 'openai');
     }
 
+    getOpenAiModelInfo(config.model);
+
     return {
       baseUrl: config.baseUrl,
       apiKey: config.apiKey,
-      model: config.model,
+      model: config.model as OpenAiModelId,
       maxRetries: config.maxRetries || 3,
     };
   }
@@ -125,7 +142,7 @@ export class OpenAILangChainProvider implements LangChainModelProvider {
   }
 
   getModel() {
-    const modelInfo = OpenAiModels[this.configData.model];
+    const modelInfo = getOpenAiModelInfo(this.configData.model);
 
     return {
       id: this.configData.model,
